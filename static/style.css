@@ -1,0 +1,218 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    /* background: url('') no-repeat; */
+    background-color: white;
+    background-size: cover;
+    background-position: center;
+}
+
+body h1 {
+    margin-top: 100px;
+    margin-left: 100px;
+}
+
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 20px 100px;
+    background-color: mediumseagreen;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1000;
+}
+
+.logo {
+    font-size: 32px;
+    color: wheat;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.navbar a {
+    position: relative;
+    font-size: 18;
+    color: white;
+    font-weight: 500;
+    text-decoration: none;
+    margin-left: 40px;
+}
+
+.navbar a::before {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 0%;
+    height: 2px;
+    background: white;
+    transition: .3s;
+}
+
+.navbar a:hover::before {
+    width: 100%;
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+    /* padding-left: 0px; */
+    /* left: 25%; */
+}
+
+.dropdown .content {
+    display: none;
+    position: absolute;
+    background: mediumseagreen;
+    top: 100%;
+    left: 0%;
+    margin: 2px;
+    padding: 5px;
+    min-width: 150px;
+    border-radius: 12px;
+    border: 2px solid rgba(0, 0, 0, 0.338);
+}
+
+.dropdown .content a {
+    margin: 12px 0;
+    display: block;
+}
+
+.dropdown:hover .content {
+    display:  block;
+}
+
+.flashes {
+    list-style: none;
+    padding: 10px;
+    background-color: #f8d7da;
+    border: 1px solid #f5c2c7;
+    color: black;
+    margin-bottom: 20px;
+    margin-top: 70px;
+}
+
+.flashes li {
+    margin: 5px 0;
+}
+
+form {
+    background-color: white;
+    padding: 20px 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    max-width: 400px;
+    margin: 100px auto; /* Center the form on the page */
+}
+
+form h1 {
+    text-align: center;
+    font-size: 24px;
+    color: mediumseagreen;
+    margin-bottom: 20px;
+}
+
+form input[type="text"], 
+form input[type="password"], 
+form input[type="email"] {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 2px solid mediumseagreen;
+    border-radius: 8px;
+    font-size: 16px;
+    outline: none;
+    transition: 0.3s;
+}
+
+form input[type="text"]:focus, 
+form input[type="password"]:focus, 
+form input[type="email"]:focus {
+    border-color: darkgreen;
+    box-shadow: 0 0 5px rgba(0, 128, 0, 0.5);
+}
+
+form input[type="submit"] {
+    width: 100%;
+    padding: 10px;
+    background-color: mediumseagreen;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: 0.3s;
+}
+
+form input[type="submit"]:hover {
+    background-color: darkgreen;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* เพิ่มการจัดสไตล์ข้อความ */
+form p {
+    text-align: center;
+    color: rgb(100, 100, 100);
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.container {
+    display: flex;
+    flex-wrap: wrap; /* Allow items to wrap to the next line */
+    justify-content: flex-start; /* Distribute items evenly with space between */
+    gap: 20px; /* Add consistent spacing between items */
+    padding: 20px; /* Add padding to the container */
+}
+
+/* Styling for the clickable movie container */
+.Movie {
+    display: block; /* Ensure the entire block is clickable */
+    background-color: #f9f9f9; /* Light gray background */
+    border: 2px solid #ddd; /* Subtle border */
+    border-radius: 10px; /* Rounded corners */
+    width: 300px; /* Set a fixed width */
+    padding: 20px; /* Inner spacing */
+    margin: 15px auto; /* Center and add spacing around */
+    margin-left: 30px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Soft shadow */
+    text-align: center; /* Center-align text */
+    font-family: Arial, sans-serif; /* Clean font style */
+    text-decoration: none; /* Remove underline from link */
+    color: inherit; /* Inherit text color */
+    transition: transform 0.3s, box-shadow 0.3s; /* Smooth hover effect */
+}
+
+/* Styling for the movie title */
+.Movie h2 {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    color: #333; /* Dark text */
+}
+
+/* Styling for the duration */
+.Movie p {
+    font-size: 1em;
+    color: #666; /* Subtle text */
+    margin-bottom: 15px;
+}
+
+/* Hover effect for the clickable box */
+.Movie:hover {
+    transform: translateY(-5px); /* Lift up */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Enhance shadow */
+    background-color: #f0f0f0; /* Slightly lighter background */
+}
+

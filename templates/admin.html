@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Login Page{% endblock %}
+{% block content %}
+<h1>Admin Secret Page</h1>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <label for="movie_name">Movie Name</label>
+    {{ form.movie_name }}
+    <label for="movie_duration">Duration (mins)</label>
+    {{ form.movie_duration }}
+    {{ form.submit }}
+</form>
+{% endblock %}

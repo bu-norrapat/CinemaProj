@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>{% block title %}{% endblock %}</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Navbar</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <header class="header">
+        <a href="#" class="logo">Logo</a>
+        <nav class="navbar">
+            <a href="/">Home</a>
+            <!-- <a href="#">Movie's</a> -->
+            {% if 'user_email' in session %}
+            <div class="dropdown">
+                <a href="#">{{ session['user_email'] }}</a>
+                <div class="content">
+                    <a href="logout">Logout</a>
+                </div>
+            </div>
+            {% else %}
+                <div class="dropdown">
+                    <a href="#">Accounting</a>
+                    <div class="content">
+                        <a href="login">Login</a>
+                        <a href="register">Register</a>
+                    </div>
+                </div>
+            {% endif %}
+        </nav>
+    </header>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <ul class="flashes">
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% endwith %}
+    {% block content %}
+    {% endblock %}
+</body>
+
+</html>
