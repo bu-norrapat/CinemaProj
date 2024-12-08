@@ -216,3 +216,33 @@ form p {
     background-color: #f0f0f0; /* Slightly lighter background */
 }
 
+
+.seating-chart {
+    display: grid;
+    grid-template-columns: repeat(16, 50px); /* 15 columns + row labels */
+    grid-gap: 5px;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.row-labels {
+    display: flex;
+    justify-content: space-evenly;
+    margin-bottom: 10px;
+}
+
+.row-label {
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.seat {
+    padding: 10px;
+    background-color: lightgray;
+    border: 1px solid #ccc;
+    cursor: pointer;
+}
+
+.seat:hover {
+    background-color: #ddd;
+}

@@ -1,7 +1,35 @@
 {% extends "base.html" %}
 {% block title %}Home Page{% endblock %}
 {% block content %}
-<h1>Movie's</h1>
+<div style="display: flex; align-items: center;">
+    <h1>Movie's on</h1>
+
+    <select id="Year" style="margin-left: 20px; font-size: 25px;margin-top: 100px;">
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+    </select>
+
+    <!-- Dropdown for Month (January to December) -->
+    <select id="month" style="margin-left: 20px; font-size: 25px;margin-top: 100px;">
+        <option value="1">January</option>
+        <option value="2">February</option>
+        <option value="3">March</option>
+        <option value="4">April</option>
+        <option value="5">May</option>
+        <option value="6">June</option>
+        <option value="7">July</option>
+        <option value="8">August</option>
+        <option value="9">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+    </select>
+
+    <!-- Dropdown for Day (1-31) -->
+    <select id="day" style="margin-left: 20px; font-size: 25px;margin-top: 100px;">
+        <!-- Days will be populated dynamically -->
+    </select>
+</div>
 
 {% for movie in movies %}
     <div class="container">
@@ -12,4 +40,97 @@
     </div>
 {% endfor %}
 
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    const yearDropdown = document.getElementById("Year");
+    const monthDropdown = document.getElementById("month");
+    const dayDropdown = document.getElementById("day");
+
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1; // Month is 0-indexed, so add 1
+    const currentDay = currentDate.getDate();
+
+    // Set Year to the current year or a valid one from the dropdown
+    yearDropdown.value = currentYear;
+
+    // Dynamically populate days based on the selected month
+    function updateDays(month, year) {
+        let daysInMonth;
+        if (month === 2) {
+            // February has 29 days (ignoring leap year for simplicity)
+            daysInMonth = 29;
+        } else if ([4, 6, 9, 11].includes(month)) {
+            // Months with 30 days
+            daysInMonth = 30;
+        } else {
+            // Other months with 31 days
+            daysInMonth = 31;
+        }
+
+        // Clear previous days and populate based on the month
+        dayDropdown.innerHTML = "";
+        for (let i = 1; i <= daysInMonth; i++) {
+            const option = document.createElement("option");
+            option.value = i;
+            option.textContent = i;
+            // Disable past dates for the current month
+            if (month === currentMonth && i < currentDay) {
+                option.disabled = true;
+            }
+            dayDropdown.appendChild(option);
+        }
+
+        // Set the day dropdown to the current day if the month is the current month
+        if (month === currentMonth) {
+            dayDropdown.value = currentDay;  // Set current day as default
+        } else {
+            dayDropdown.value = 1; // Set to 1 if it's not the current month
+        }
+    }
+
+    // Disable months that are in the past (compared to current month)
+    function updateMonthOptions(year) {
+        const monthOptions = monthDropdown.querySelectorAll("option");
+        monthOptions.forEach(option => {
+            const monthValue = parseInt(option.value);
+            if (year === currentYear && monthValue < currentMonth) {
+                option.disabled = true;
+            } else {
+                option.disabled = false;
+            }
+        });
+    }
+
+    // Set default days based on the current month
+    updateDays(currentMonth, currentYear);
+    updateMonthOptions(currentYear);
+
+    // Update days whenever the month or year changes
+    monthDropdown.addEventListener("change", function() {
+        updateDays(parseInt(monthDropdown.value), parseInt(yearDropdown.value));
+    });
+
+    yearDropdown.addEventListener("change", function() {
+        const selectedYear = parseInt(yearDropdown.value);
+        updateMonthOptions(selectedYear);
+        updateDays(parseInt(monthDropdown.value), selectedYear);
+    });
+
+    // Ensure that the default month is set to the current month (if not already done)
+    if (monthDropdown.value !== currentMonth.toString()) {
+        monthDropdown.value = currentMonth; // Set the default month if it's not already selected
+    }
+    
+    // Also set the day for the current month if it is the current month
+    if (currentMonth === parseInt(monthDropdown.value)) {
+        dayDropdown.value = currentDay;
+    }
+    });
+</script>
 {% endblock %}
+
+
+

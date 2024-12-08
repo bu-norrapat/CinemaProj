@@ -1,5 +1,5 @@
 from flask import Flask, render_template, redirect, url_for, request, session, flash
-from datetime import timedelta
+from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from flask_wtf import FlaskForm
@@ -72,16 +72,45 @@ class MovieForm(FlaskForm):
     movie_duration = IntegerField('Duration (mins)', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Add Movie')
 
+class Tickets(FlaskForm):
+    Seat_row = StringField('')
+
+    pass
+
 def index():
     return redirect(url_for('home'))
 
 def home():
     movies = Movies.query.all()
+
+    # Get current date information
+    current_year = datetime.now().year
+    current_month = datetime.now().month
+    current_day = datetime.now().day
+    
+
     if 'user_email' in session:
         user_email = session['user_email']
-        return render_template('home.html', user_email=user_email, movies=movies, logged_in=True)
+
+        return render_template(
+            'home.html', 
+            user_email=user_email, 
+            movies=movies, 
+            logged_in=True,
+            current_year=current_year, 
+            current_month=current_month, 
+            current_day=current_day
+        )
     else:
-        return render_template('home.html', movies=movies, logged_in=False)
+
+        return render_template(
+            'home.html', 
+            movies=movies, 
+            logged_in=False,
+            current_year=current_year, 
+            current_month=current_month, 
+            current_day=current_day
+        )
 
 def admin():
     form = MovieForm()

@@ -20,15 +20,15 @@
             <div class="dropdown">
                 <a href="#">{{ session['user_email'] }}</a>
                 <div class="content">
-                    <a href="logout">Logout</a>
+                    <a href="/logout">Logout</a>
                 </div>
             </div>
             {% else %}
                 <div class="dropdown">
                     <a href="#">Accounting</a>
                     <div class="content">
-                        <a href="login">Login</a>
-                        <a href="register">Register</a>
+                        <a href="/login">Login</a>
+                        <a href="/register">Register</a>
                     </div>
                 </div>
             {% endif %}
