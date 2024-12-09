@@ -1,16 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Register Page{% endblock %}
+{% block title %}movie_detail Page{% endblock %}
 
 {% block content %}
     <h1>{{ movie.movie_name }}</h1>
-    <p style="margin-left: 20px;">Duration: {{ movie.movie_duration }} mins</p>
-    <p style="margin-left: 20px;">Details: Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-    <a style="margin-left: 20px;" href="/">Back to Movies List</a>  <!-- Link กลับไปหน้าหลัก -->
+    <p style="margin-left: 20px;margin-top: 50px;">Duration: {{ movie.movie_duration }} mins</p>
+    <p style="margin-left: 20px;margin-top: 10px;margin-bottom: 10px;">Details: THIS IS A TESTING MOVIE DETAIL BUT ITS STILL A GREAT MOVIE !!!.</p>
+    <a style="margin-left: 20px;margin-top: 20px;" href="/"><button style="padding: 10px 20px; font-size: 16px; background-color: #4CAF50; color: white; border: none; cursor: pointer;">
+        Back to Movies List
+    </button></a>  <!-- Link กลับไปหน้าหลัก -->
 
     <!-- Seat Selection Section (Only shows if the user is logged in) -->
     {% if 'user_email' in session %}
-        <h2>Seat Selection</h2>
+        <h2 style="margin-left: 50px;margin-top: 50px;">Seat Selection</h2>
         <div class="seating-chart" style="font-family: Arial, sans-serif; display: grid; grid-template-columns: repeat(15, 50px); 
         grid-gap: 5px; text-align: center; margin-top: 20px;margin-left: 20px;">
             <!-- Dynamic seating chart will be generated here -->
@@ -41,8 +43,8 @@
 
     <!-- If the user is not logged in, show a message and a login button -->
     {% else %}
-        <p>Please log in to book a ticket.</p>
-        <a href="/login">
+        <p style = "margin-left: 50px;">Please log in to book a ticket.</p>
+        <a style="margin-left: 50px;" href="/login">
             <button style="padding: 10px 20px; font-size: 16px; background-color: #4CAF50; color: white; border: none; cursor: pointer;">
                 Log in
             </button>

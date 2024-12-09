@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request, session, flash
+from flask import Flask, jsonify, render_template, redirect, url_for, request, session, flash
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
@@ -36,15 +36,6 @@ class Users(db.Model):
         self.user_password = user_password
         self.user_is_admin = user_is_admin
 
-class Movies(db.Model):
-    _id = db.Column("movie_id", db.Integer, primary_key=True)
-    movie_name = db.Column(db.String(360), unique=True, nullable=False)
-    movie_duration = db.Column(db.Integer, nullable=False)
-
-    def __init__(self, movie_name, movie_duration):
-        self.movie_name = movie_name
-        self.movie_duration = movie_duration
-
 class Theaters(db.Model):
     _id = db.Column("theater_id", db.Integer, primary_key=True)
     
@@ -77,41 +68,100 @@ class Tickets(FlaskForm):
 
     pass
 
+class Movies(db.Model):
+    __tablename__ = 'movies'
+    _id = db.Column("movie_id", db.Integer, primary_key=True)
+    movie_name = db.Column(db.String(360), unique=True, nullable=False)
+    movie_duration = db.Column(db.Integer, nullable=False)
+
+    # Set the backref name to 'schedules'
+    schedules = db.relationship('Schedule', backref='movie_schedules', lazy=True)
+
+    def __init__(self, movie_name, movie_duration):
+        self.movie_name = movie_name
+        self.movie_duration = movie_duration
+
+
+class Schedule(db.Model):
+    __tablename__ = 'Schedules'
+    id = db.Column(db.Integer, primary_key=True)
+    movie_id = db.Column(db.Integer, db.ForeignKey('movies.movie_id'))
+    start_time = db.Column(db.Text)
+    end_time = db.Column(db.Text)
+    repeat_days = db.Column(db.Integer)
+
+    movie = db.relationship('Movies', backref='movie_schedule', lazy=True)
+    
+    # Link to Showtimes through back_populates
+    showtimes = db.relationship('Showtime', back_populates='schedule', lazy=True)
+
+    def __init__(self, show_year, show_month, show_date, movie_id):
+        self.show_year = show_year
+        self.show_month = show_month
+        self.show_date = show_date
+        self.movie_id = movie_id
+
+class Showtime(db.Model):
+    __tablename__ = 'Showtimes'
+    id = db.Column(db.Integer, primary_key=True)
+    schedule_id = db.Column(db.Integer, db.ForeignKey('Schedules.id'))
+    show_year = db.Column(db.Integer)
+    show_month = db.Column(db.Integer)
+    show_date = db.Column(db.Integer)
+
+    # Link to Movie and Schedule using back_populates
+    schedule = db.relationship('Schedule', back_populates='showtimes')  # Use back_populates here
+
+    def __init__(self, show_year, show_month, show_date, schedule_id, movie_id):
+        self.show_year = show_year
+        self.show_month = show_month
+        self.show_date = show_date
+        self.schedule_id = schedule_id
+        self.movie_id = movie_id
+
 def index():
     return redirect(url_for('home'))
 
 def home():
-    movies = Movies.query.all()
+    # Adjust the query to join Schedule and Showtime models properly
+    movies = db.session.query(Movies, Schedule, Showtime).join(Schedule, Schedule.movie_id == Movies._id) \
+        .join(Showtime, Showtime.schedule_id == Schedule.id).all()
 
     # Get current date information
     current_year = datetime.now().year
     current_month = datetime.now().month
     current_day = datetime.now().day
     
+    movie_data = []
+    for movie, schedule, showtime in movies:
+        movie_data.append({
+            'movie_name': movie.movie_name,
+            'movie_duration': movie.movie_duration,
+            'start_time': schedule.start_time,  # Access start_time from Schedule
+            'end_time': schedule.end_time       # Access end_time from Schedule
+        })
 
     if 'user_email' in session:
         user_email = session['user_email']
-
         return render_template(
             'home.html', 
             user_email=user_email, 
-            movies=movies, 
+            movie_data=movie_data,  # Pass movie data with all details
             logged_in=True,
             current_year=current_year, 
             current_month=current_month, 
             current_day=current_day
         )
     else:
-
         return render_template(
             'home.html', 
-            movies=movies, 
+            movie_data=movie_data,  # Pass movie data for not logged-in user
             logged_in=False,
             current_year=current_year, 
             current_month=current_month, 
             current_day=current_day
         )
-
+    
 def admin():
     form = MovieForm()
     if form.validate_on_submit():
@@ -169,6 +219,32 @@ def movie_detail(movie_id):
     movie = Movies.query.get_or_404(movie_id)
     return render_template('movie_detail.html', movie=movie)
 
+
+def get_movies():
+    selected_date = request.args.get('date')  # Get the selected date (YYYY-MM-DD format)
+    selected_year, selected_month, selected_day = selected_date.split('-')
+    
+    # Convert the string date components to integers
+    results = db.session.query(Movies, Schedule, Showtime).join(Schedule, Schedule.movie_id == Movies._id) \
+        .join(Showtime, Showtime.schedule_id == Schedule.id) \
+        .filter(Showtime.show_year == int(selected_year), 
+                Showtime.show_month == int(selected_month), 
+                Showtime.show_date == int(selected_day)) \
+        .all()
+
+    # Prepare the response with movie data
+    movie_data = []
+    for movie, schedule, showtime in results:
+        movie_data.append({
+            'movie_id' : movie._id,
+            'movie_name': movie.movie_name,
+            'movie_duration': movie.movie_duration,
+            'start_time': schedule.start_time,  # Access start_time from Schedule
+            'end_time': schedule.end_time       # Access end_time from Schedule
+        })
+    print(movie_data)
+    return jsonify({'movies': movie_data})
+app.add_endpoint('/get_movies', 'get_movies', get_movies, methods=['GET'])
 app.add_endpoint('/', 'index', index, methods=['GET'])
 app.add_endpoint('/home', 'home', home, methods=['GET'])
 app.add_endpoint('/register', 'register', register, methods=['GET','POST'])
