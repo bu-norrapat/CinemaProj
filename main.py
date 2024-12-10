@@ -63,10 +63,28 @@ class MovieForm(FlaskForm):
     movie_duration = IntegerField('Duration (mins)', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Add Movie')
 
-class Tickets(FlaskForm):
-    Seat_row = StringField('')
+class Ticket(db.Model):
+    __tablename__ = 'Tickets'
+    
+    # Define the columns for the Ticket table
+    id = db.Column("Id",db.Integer, primary_key=True)
+    seat_row = db.Column("Seat_Row",db.Text, nullable=False)  # Store single character like 'A', 'B', etc.
+    seat_column = db.Column("Seat_Column",db.Integer, nullable=False)
+    movie_id = db.Column("Movie_id",db.Integer, db.ForeignKey('movies.movie_id'), nullable=False)  
+    showtime_id = db.Column("Showtime_id",db.Integer, db.ForeignKey('Showtimes.id'), nullable=False)
+    user_id = db.Column("User_id",db.Integer, db.ForeignKey('users.user_id'), nullable=False)
 
-    pass
+    # Relationships to other models
+    movie = db.relationship('Movies', backref='tickets', lazy=True)
+    showtime = db.relationship('Showtime', back_populates='tickets')  # Keep back_populates
+    user = db.relationship('Users', backref='tickets', lazy=True)
+
+    def __init__(self, seat_row, seat_column, movie_id, showtime_id, user_id):
+        self.seat_row = seat_row
+        self.seat_column = seat_column
+        self.movie_id = movie_id
+        self.showtime_id = showtime_id
+        self.user_id = user_id
 
 class Movies(db.Model):
     __tablename__ = 'movies'
@@ -110,17 +128,58 @@ class Showtime(db.Model):
     show_date = db.Column(db.Integer)
 
     # Link to Movie and Schedule using back_populates
-    schedule = db.relationship('Schedule', back_populates='showtimes')  # Use back_populates here
+    schedule = db.relationship('Schedule', back_populates='showtimes')
+    tickets = db.relationship('Ticket', back_populates='showtime', lazy=True)  # Use back_populates instead of backref
 
-    def __init__(self, show_year, show_month, show_date, schedule_id, movie_id):
+    def __init__(self, show_year, show_month, show_date, schedule_id):
         self.show_year = show_year
         self.show_month = show_month
         self.show_date = show_date
         self.schedule_id = schedule_id
-        self.movie_id = movie_id
 
 def index():
     return redirect(url_for('home'))
+
+def save_seat():
+    data = request.get_json()  # Parse JSON data from the request
+    row = data.get('row')
+    column = data.get('column')
+    movie_id = data.get('movie_id')
+    showtime_id = data.get('showtime_id')
+
+    # Perform seat booking logic (e.g., checking if the seat is available)
+    existing_ticket = Ticket.query.filter_by(
+        seat_row=row,
+        seat_column=column,
+        movie_id=movie_id,
+        showtime_id=showtime_id
+    ).first()
+
+    if existing_ticket:
+        return jsonify({
+            "status": "error",
+            "message": f"Seat {row}{column} is already booked."
+        })
+
+    # Create new ticket if seat is available
+    new_ticket = Ticket(
+        seat_row=row,
+        seat_column=column,
+        movie_id=movie_id,
+        showtime_id=showtime_id,
+        user_id=session.get('user_email')  # Assuming user is logged in
+    )
+    db.session.add(new_ticket)
+    db.session.commit()
+
+    return jsonify({
+        "status": "success",
+        "message": f"Seat {row}{column} booked successfully!",
+        "movie_id": movie_id,
+        "showtime_id": showtime_id,
+        "seat": f"{row}{column}"
+    })
+
 
 def home():
     # Adjust the query to join Schedule and Showtime models properly
@@ -190,6 +249,7 @@ def login():
 
             session['user_email'] = user.user_email
             flash("Login successful", "success")
+            print(session.get('user_email'))
             return redirect(url_for('home'))
         else:
             flash("Invalid email or password", "error")
@@ -215,10 +275,41 @@ def logout():
     return redirect(url_for('home'))
 
 def movie_detail(movie_id):
-    # Example: Simulating movie data retrieval
+    # Retrieve movie by ID, or return a 404 if not found
+    showtimes = db.session.query(Showtime, Schedule).join(Schedule, Schedule.id == Showtime.schedule_id) \
+        .filter(Showtime.schedule.has(movie_id=movie_id)).all()
+    
     movie = Movies.query.get_or_404(movie_id)
-    return render_template('movie_detail.html', movie=movie)
+    
+    # Get the user email from the session
+    user_email = session.get('user_email')
+    
+    # If the user is logged in, pass the user_email
+    if user_email:
+        user_id = user_email  # Or any other identifier like user_id if needed
+    else:
+        user_id = None  # If user is not logged in, set to None
+    
+    # If no showtimes are found, handle it
+    if not showtimes:
+        return "No showtimes available for this movie", 404
 
+    # Prepare movie data and showtimes for rendering
+    showtime_data = []
+    for showtime, schedule in showtimes:
+        showtime_data.append({
+            'showtime_id': showtime.id,
+            'movie_name': movie.movie_name,
+            'start_time': schedule.start_time,
+            'end_time': schedule.end_time,
+            'show_year': showtime.show_year,
+            'show_month': showtime.show_month,
+            'show_day': showtime.show_date,
+        })
+    print(f"User ID passed to template: {user_id}")
+
+    # Pass both movie and showtimes to the template
+    return render_template('movie_detail.html',user_id=session.get('user_email'),movie_id=movie_id, movie=movie, showtimes=showtime_data, showtime=showtime)
 
 def get_movies():
     selected_date = request.args.get('date')  # Get the selected date (YYYY-MM-DD format)
@@ -242,8 +333,42 @@ def get_movies():
             'start_time': schedule.start_time,  # Access start_time from Schedule
             'end_time': schedule.end_time       # Access end_time from Schedule
         })
-    print(movie_data)
+
     return jsonify({'movies': movie_data})
+
+
+
+def tickets():
+    # Retrieve query parameters from the URL
+    user_email = session.get('user_email')
+
+    if not user_email:
+        return "User not logged in", 401  # Return an error if the user is not logged in
+
+    # Query the ticket information from the database using the user_email
+    ticket_info = db.session.query(Ticket, Showtime, Schedule, Movies) \
+        .join(Showtime, Showtime.id == Ticket.showtime_id) \
+        .join(Schedule, Schedule.id == Showtime.schedule_id) \
+        .join(Movies, Movies._id == Ticket.movie_id) \
+        .filter(Ticket.user_id == user_email)  # Assuming Ticket model has user_email field
+
+    # If no ticket is found for the user, return an error
+    if not ticket_info:
+        return "Ticket not found", 404
+
+    # Assuming there is only one ticket for simplicity (or you could handle multiple tickets if needed)
+    ticket_data = {
+        'movie_name': ticket_info.Movies.movie_name,
+        'seat': ticket_info.seat,
+        'showtime': ticket_info.Showtime.show_time,  # Adjust to match your actual field names
+        'end_time': ticket_info.Showtime.end_time,  # Adjust to match your actual field names
+    }
+
+    # Render the tickets page with ticket data
+    return render_template('tickets.html', ticket_info=ticket_data)
+
+app.add_endpoint('/tickets', 'tickets', tickets, methods=['GET'])
+app.add_endpoint('/save-seat', 'save-seat', save_seat, methods=['POST'])
 app.add_endpoint('/get_movies', 'get_movies', get_movies, methods=['GET'])
 app.add_endpoint('/', 'index', index, methods=['GET'])
 app.add_endpoint('/home', 'home', home, methods=['GET'])
@@ -252,6 +377,7 @@ app.add_endpoint('/login', 'login', login, methods=['GET','POST'])
 app.add_endpoint('/logout', 'logout', logout, methods=['GET'])
 app.add_endpoint('/admin', 'admin', admin, methods=['GET','POST'])
 app.add_endpoint('/movie/<int:movie_id>', 'movie_detail', movie_detail, methods=['GET'])
+
 
 if __name__ == "__main__":
     with flask_app.app_context():

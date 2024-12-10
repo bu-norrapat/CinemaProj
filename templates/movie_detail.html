@@ -3,12 +3,25 @@
 {% block title %}movie_detail Page{% endblock %}
 
 {% block content %}
+
     <h1>{{ movie.movie_name }}</h1>
+
     <p style="margin-left: 20px;margin-top: 50px;">Duration: {{ movie.movie_duration }} mins</p>
     <p style="margin-left: 20px;margin-top: 10px;margin-bottom: 10px;">Details: THIS IS A TESTING MOVIE DETAIL BUT ITS STILL A GREAT MOVIE !!!.</p>
+    
     <a style="margin-left: 20px;margin-top: 20px;" href="/"><button style="padding: 10px 20px; font-size: 16px; background-color: #4CAF50; color: white; border: none; cursor: pointer;">
         Back to Movies List
-    </button></a>  <!-- Link กลับไปหน้าหลัก -->
+    </button></a>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 9999;">
+        <div style="background-color: white; padding: 20px; border-radius: 10px; max-width: 500px; width: 80%; text-align: center;">
+            <h3>Confirm Your Booking</h3>
+            <p id="confirmation-message"></p>
+            <button id="confirm-booking" onclick="confirmBooking()">Yes, Book Ticket</button>
+            <button onclick="cancelBooking()">Cancel</button>
+        </div>
+    </div>
 
     <!-- Seat Selection Section (Only shows if the user is logged in) -->
     {% if 'user_email' in session %}
@@ -18,15 +31,32 @@
             <!-- Dynamic seating chart will be generated here -->
         </div>
 
+
         <script>
+            let user_id = "{{ user_id }}";  // Get user_id from Flask template
+
+            // Check if user_id is available
+            if (!user_id) {
+                console.error("User ID is not available");
+            } else {
+                console.log('User ID:', user_id);  // Confirm user_id is correctly passed
+            }
+
             // Row labels (A to H)
             const rowLabels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-            
+        
             // Number of columns (1 to 15)
             const numColumns = 15;
-
+       
             // Get the seating chart container element
             const seatingChart = document.querySelector('.seating-chart');
+            let selectedSeat = '';
+            let movieId = "{{ movie._id }}";  // Use the correct movie id here
+            let movieName = "{{ movie.movie_name }}";  // Use movie name dynamically from the template
+            let showtimeId = "{{ showtime.schedule_id }}";  // Dynamically pass the showtime id
+
+
+
 
             // Create the rows (A to H) with seat labels (A1, A2, ..., H15)
             rowLabels.forEach(rowLabel => {
@@ -34,12 +64,73 @@
                     const seat = document.createElement('div');
                     seat.classList.add('seat');
                     seat.textContent = `${rowLabel}${i}`;
+                    seat.onclick = function() {
+                        selectedSeat = `${rowLabel}${i}`;
+                        showConfirmationModal(selectedSeat, movieId, showtimeId, movieName);
+                    };
                     seatingChart.appendChild(seat);
                 }
             });
+        
+            function showConfirmationModal(seat, movieId, showtimeId, movieName) {
+                const message = `Are you sure you want to book seat ${seat} for the movie "${movieName}"?`;
+                document.getElementById("confirmation-message").textContent = message;
+                document.getElementById("confirmation-modal").style.display = 'flex';
+        
+                window.selectedSeat = seat;
+                window.movieId = movieId;
+                window.showtimeId = showtimeId;
+                window.movieName = movieName;
+            }
+        
+            function confirmBooking() {
+                // Send the booking details to the server
+                const row = selectedSeat.charAt(0); // Get the row (e.g., 'A')
+                const column = selectedSeat.slice(1); // Get the column (e.g., '1')
+
+                
+                // Prepare data to be sent to the backend
+                const bookingData = {
+                    row: row,
+                    column: column,
+                    movie_id: movieId,
+                    showtime_id: showtimeId,
+                    User_id : user_id,
+                };
+        
+                // Use fetch API to send the data
+                fetch('/save-seat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(bookingData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert(data.message);  // Show success message
+                        window.location.href = "/tickets?movie_id=" + encodeURIComponent(data.movie_id) + 
+                                                "&showtime_id=" + encodeURIComponent(data.showtime_id) + 
+                                                "&seat=" + encodeURIComponent(data.seat);  // Redirect to tickets page
+                    } else {
+                        alert(data.message);  // Show error message if the seat is already booked
+                    }
+                })
+                .catch(error => {
+                    alert('An error occurred while booking the seat. Please try again.');
+                });
+        
+                // Close the modal
+                document.getElementById("confirmation-modal").style.display = 'none';
+            }
+        
+            function cancelBooking() {
+                document.getElementById("confirmation-modal").style.display = 'none';
+            }
         </script>
 
-        <h2 style="margin-left: 300px;margin-top: 20px;">SCREEN IS HERE</h2>
+        <h2 style="margin-left: 300px; margin-top: 20px;">SCREEN IS HERE</h2>
 
     <!-- If the user is not logged in, show a message and a login button -->
     {% else %}
