@@ -38,7 +38,7 @@
 <div class="movie-container" id="movie-list">
     {% for movie in movie_data %}
         <div class="container">
-            <a href="/movie/{{ movie.movie_id }}" class="Movie">
+            <a href="/movie/{{ movie.movie_id }}?year={{ selected_year }}&month={{ selected_month }}&day={{ selected_day }}" class="Movie">
                 <h2>{{ movie.movie_name }}</h2>
                 <p>Duration: {{ movie.movie_duration }} mins</p>
                 <p>Start Time: {{ movie.start_time }}</p>
@@ -129,54 +129,54 @@
         });
 
         function updateMoviesOnSelectedDate() {
-            const selectedYear = yearDropdown.value;
-            const selectedMonth = monthDropdown.value;
-            const selectedDay = dayDropdown.value;
+        const selectedYear = yearDropdown.value;
+        const selectedMonth = monthDropdown.value;
+        const selectedDay = dayDropdown.value;
 
-            // Create a date string in 'YYYY-MM-DD' format
-            const selectedDate = `${selectedYear}-${selectedMonth.padStart(2, '0')}-${selectedDay.padStart(2, '0')}`;
+        // Create a date string in 'YYYY-MM-DD' format
+        const selectedDate = `${selectedYear}-${selectedMonth.padStart(2, '0')}-${selectedDay.padStart(2, '0')}`;
 
-            // Make AJAX request to get the movies for the selected date
-            fetch(`/get_movies?date=${selectedDate}`)
-                .then(response => response.json())
-                .then(data => {
-                    // Get the movie container element
-                    const movieContainer = document.querySelector('.movie-container');
-                    movieContainer.innerHTML = '';  // Clear the existing movies
+        // Make AJAX request to get the movies for the selected date
+        fetch(`/get_movies?date=${selectedDate}&year=${selectedYear}&month=${selectedMonth}&day=${selectedDay}`)
+            .then(response => response.json())
+            .then(data => {
+                // Get the movie container element
+                const movieContainer = document.querySelector('.movie-container');
+                movieContainer.innerHTML = '';  // Clear the existing movies
 
-                    // Loop through the movies and add them to the page
-                    if (data.movies && data.movies.length > 0) {
-                        data.movies.forEach(movie => {
-                            const movieElement = document.createElement('div');
-                            movieElement.classList.add('movie');
-                            movieElement.innerHTML = `
-                                <div class="container" >
-                                    <a href="/movie/${movie.movie_id}" class="Movie">
-                                        <h2>${movie.movie_name}</h2>
-                                        <p>Duration: ${movie.movie_duration} mins</p>
-                                        <p>Start Time: ${movie.start_time}</p>
-                                        <p>End Time: ${movie.end_time}</p>
-                                    </a>
-                                </div>
-                            `;
-                            movieContainer.appendChild(movieElement);
-                        });
-                    } else {
-                        movieContainer.innerHTML = '<p style ="margin-left: 50px;margin-top: 50px;">No movies available for the selected date.</p>';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching movies:', error);
-                });
-        }
+                // Loop through the movies and add them to the page
+                if (data.movies && data.movies.length > 0) {
+                    data.movies.forEach(movie => {
+                        const movieElement = document.createElement('div');
+                        movieElement.classList.add('movie');
+                        movieElement.innerHTML = `
+                            <div class="container">
+                                <a href="/movie/${movie.movie_id}" class="Movie">
+                                    <h2>${movie.movie_name}</h2>
+                                    <p>Duration: ${movie.movie_duration} mins</p>
+                                    <p>Start Time: ${movie.start_time}</p>
+                                    <p>End Time: ${movie.end_time}</p>
+                                </a>
+                            </div>
+                        `;
+                        movieContainer.appendChild(movieElement);
+                    });
+                } else {
+                    movieContainer.innerHTML = '<p style="margin-left: 50px; margin-top: 50px;">No movies available for the selected date.</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching movies:', error);
+            });
+    }
 
-        // Add event listeners to the dropdowns to update movies on change
-        yearDropdown.addEventListener("change", updateMoviesOnSelectedDate);
-        monthDropdown.addEventListener("change", updateMoviesOnSelectedDate);
-        dayDropdown.addEventListener("change", updateMoviesOnSelectedDate);
+            // Add event listeners to the dropdowns to update movies on change
+            yearDropdown.addEventListener("change", updateMoviesOnSelectedDate);
+            monthDropdown.addEventListener("change", updateMoviesOnSelectedDate);
+            dayDropdown.addEventListener("change", updateMoviesOnSelectedDate);
 
-        // Initially fetch movies for the default selected date
-        updateMoviesOnSelectedDate();
-    });
+            // Initially fetch movies for the default selected date
+            updateMoviesOnSelectedDate();
+        });
 </script>
 {% endblock %}

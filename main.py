@@ -290,6 +290,7 @@ def movie_detail(movie_id):
 
     # Get the user email from the session
     user_email = session.get('user_email')
+    print(user_email)
   
     
     # If the user is logged in, pass the user_email
