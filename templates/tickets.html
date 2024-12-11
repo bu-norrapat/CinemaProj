@@ -1,14 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}tickets Page{% endblock %}
+{% block title %}Tickets Page{% endblock %}
 
 {% block content %}
-    <div style="padding: 20px; text-align: center;">
-        <h2>YOUR TICKET</h2>
-        <p><strong>Movie:</strong> {{ ticket_info.movie_name }}</p>
-        <p><strong>Seat_row:</strong> {{ ticket_info.seat_row }}</p>
-        <p><strong>Seat_column:</strong> {{ ticket_info.seat_column }}</p>
-        <p><strong>Showtime:</strong> {{ ticket_info.showtime }}</p>
-        <p><strong>End Time:</strong> {{ ticket_info.end_time }}</p>
-    </div>
+    {% for ticket in ticket_info %}
+        <div style="padding: 20px; text-align: center;margin-top: 100px;">
+            <h2>YOUR TICKET</h2>
+            <p><strong>Movie:</strong> {{ ticket.movie_name }}</p>
+            <p><strong>Seat row:</strong> {{ ticket.seat_row }}</p>
+            <p><strong>Seat column:</strong> {{ ticket.seat_column }}</p>
+            <p><strong>Start Time:</strong> {{ ticket.start_time }}</p>
+            <p><strong>End Time:</strong> {{ ticket.end_time }}</p>
+            <p><strong>Show Date:</strong> {{ ticket.show_date }}</p>  <!-- Display the show date -->
+        </div>
+    {% endfor %}
 {% endblock %}

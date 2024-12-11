@@ -109,7 +109,7 @@ class Schedule(db.Model):
     repeat_days = db.Column(db.Integer)
 
     movie = db.relationship('Movies', backref='movie_schedule', lazy=True)
-    
+
     # Link to Showtimes through back_populates
     showtimes = db.relationship('Showtime', back_populates='schedule', lazy=True)
 
@@ -130,6 +130,8 @@ class Showtime(db.Model):
     # Link to Movie and Schedule using back_populates
     schedule = db.relationship('Schedule', back_populates='showtimes')
     tickets = db.relationship('Ticket', back_populates='showtime', lazy=True)  # Use back_populates instead of backref
+
+
 
     def __init__(self, show_year, show_month, show_date, schedule_id):
         self.show_year = show_year
@@ -275,14 +277,20 @@ def logout():
     return redirect(url_for('home'))
 
 def movie_detail(movie_id):
+
+    current_year = datetime.now().year
+    current_month = datetime.now().month
+    current_day = datetime.now().day
+    
     # Retrieve movie by ID, or return a 404 if not found
-    showtimes = db.session.query(Showtime, Schedule).join(Schedule, Schedule.id == Showtime.schedule_id) \
-        .filter(Showtime.schedule.has(movie_id=movie_id)).all()
+    showtimes = db.session.query(Showtime).filter(Showtime.show_date==current_day,Showtime.show_month==current_month,Showtime.show_year==current_year,Showtime.schedule_id== movie_id-3).first()
     
     movie = Movies.query.get_or_404(movie_id)
-    
+
+
     # Get the user email from the session
     user_email = session.get('user_email')
+  
     
     # If the user is logged in, pass the user_email
     if user_email:
@@ -295,21 +303,11 @@ def movie_detail(movie_id):
         return "No showtimes available for this movie", 404
 
     # Prepare movie data and showtimes for rendering
-    showtime_data = []
-    for showtime, schedule in showtimes:
-        showtime_data.append({
-            'showtime_id': showtime.id,
-            'movie_name': movie.movie_name,
-            'start_time': schedule.start_time,
-            'end_time': schedule.end_time,
-            'show_year': showtime.show_year,
-            'show_month': showtime.show_month,
-            'show_day': showtime.show_date,
-        })
-    print(f"User ID passed to template: {user_id}")
+
+
 
     # Pass both movie and showtimes to the template
-    return render_template('movie_detail.html',user_id=session.get('user_email'),movie_id=movie_id, movie=movie, showtimes=showtime_data, showtime=showtime)
+    return render_template('movie_detail.html',user_id=session.get('user_email'),movie_id=movie_id, movie=movie, showtimes=showtimes.id)
 
 def get_movies():
     selected_date = request.args.get('date')  # Get the selected date (YYYY-MM-DD format)
@@ -341,31 +339,57 @@ def get_movies():
 def tickets():
     # Retrieve query parameters from the URL
     user_email = session.get('user_email')
+    # print(user_email)
 
     if not user_email:
         return "User not logged in", 401  # Return an error if the user is not logged in
 
     # Query the ticket information from the database using the user_email
-    ticket_info = db.session.query(Ticket, Showtime, Schedule, Movies) \
-        .join(Showtime, Showtime.id == Ticket.showtime_id) \
-        .join(Schedule, Schedule.id == Showtime.schedule_id) \
-        .join(Movies, Movies._id == Ticket.movie_id) \
-        .filter(Ticket.user_id == user_email)  # Assuming Ticket model has user_email field
+    ticket_info_list = db.session.query(Ticket, Movies, Schedule, Showtime).\
+        join(Movies, Movies._id == Ticket.movie_id).\
+        join(Showtime, Showtime.id == Ticket.showtime_id).\
+        join(Schedule, Schedule.id == Showtime.schedule_id).\
+        filter(Ticket.user_id == user_email).\
+        all()  # Fetch all results
 
-    # If no ticket is found for the user, return an error
-    if not ticket_info:
+    # If no tickets are found for the user, return an error
+    if ticket_info_list:
+        ticket_data_list = []
+        for ticket_info in ticket_info_list:
+            ticket = ticket_info.Ticket
+            movie = ticket_info.Movies
+            schedule = ticket_info.Schedule
+            showtime = ticket_info.Showtime
+
+            showtime_year = showtime.show_year
+            showtime_month = showtime.show_month
+            showtime_day = showtime.show_date
+
+            show_date = (showtime_year, showtime_month, showtime_day)
+
+            # Extract data from the movie, schedule, and showtime objects
+            movie_name = movie.movie_name  # Assuming 'movie_name' is the correct attribute
+            schedule_start_time = schedule.start_time  # Assuming 'Start_time' is the correct attribute
+            schedule_end_time = schedule.end_time  # Assuming 'End_time' is the correct attribute
+            seat_row = ticket.seat_row
+            seat_column = ticket.seat_column
+
+
+            ticket_data = {
+                'movie_name': movie_name,
+                'seat_row': seat_row,
+                'seat_column': seat_column,
+                'start_time': schedule_start_time,
+                'end_time': schedule_end_time,
+                'show_date': show_date, 
+            }
+
+            ticket_data_list.append(ticket_data)
+
+        return render_template('tickets.html', ticket_info=ticket_data_list)
+    else:
         return "Ticket not found", 404
 
-    # Assuming there is only one ticket for simplicity (or you could handle multiple tickets if needed)
-    ticket_data = {
-        'movie_name': ticket_info.Movies.movie_name,
-        'seat': ticket_info.seat,
-        'showtime': ticket_info.Showtime.show_time,  # Adjust to match your actual field names
-        'end_time': ticket_info.Showtime.end_time,  # Adjust to match your actual field names
-    }
-
-    # Render the tickets page with ticket data
-    return render_template('tickets.html', ticket_info=ticket_data)
 
 app.add_endpoint('/tickets', 'tickets', tickets, methods=['GET'])
 app.add_endpoint('/save-seat', 'save-seat', save_seat, methods=['POST'])
